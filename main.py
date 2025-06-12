@@ -4,6 +4,8 @@ import json
 import os
 from datetime import datetime, timedelta
 
+from productivity_stats import ProductivityStatsWindow
+
 class ProductivityTimer:
     def __init__(self):
         self.root = tk.Tk()
@@ -72,8 +74,19 @@ class ProductivityTimer:
                                           values=["Work", "Study", "Exercise", "Reading", 
                                                  "Project", "Learning", "Other"])
         self.activity_combo.grid(row=2, column=1, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
-    
-    # Add these methods to the ProductivityTimer class in main.py
+
+        # Add statistics button to the main UI
+        stats_frame = ttk.LabelFrame(main_frame, text="📊 Analytics", padding="10")
+        stats_frame.grid(row=6, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 20))
+        
+        stats_btn = ttk.Button(stats_frame, text="📈 View Statistics", 
+                              command=self.show_statistics,
+                              style="Accent.TButton")
+        stats_btn.grid(row=0, column=0, padx=5)
+        
+        export_btn = ttk.Button(stats_frame, text="📤 Export Data", 
+                               command=self.export_data)
+        export_btn.grid(row=0, column=1, padx=5)
 
     def setup_ui(self):
         """Initialize the user interface"""
@@ -323,6 +336,37 @@ class ProductivityTimer:
         """Start the application"""
         self.root.mainloop()
 
+
+    def show_statistics(self):
+        """Show statistics window"""
+        ProductivityStatsWindow(self.root)
+
+    def export_data(self):
+        """Export data to CSV"""
+        import csv
+        from tkinter import filedialog
+        
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+        )
+        
+        if filename:
+            with open(filename, 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(["Start Time", "End Time", "Activity", "Duration (minutes)", "Type"])
+                
+                for session in self.data["sessions"]:
+                    writer.writerow([
+                        session["start_time"],
+                        session["end_time"], 
+                        session["activity"],
+                        round(session["duration"] / 60, 2),
+                        session.get("type", "manual")
+                    ])
+            
+            tk.messagebox.showinfo("Export Complete", f"Data exported to {filename}")
+              
 if __name__ == "__main__":
     app = ProductivityTimer()
     app.run()
